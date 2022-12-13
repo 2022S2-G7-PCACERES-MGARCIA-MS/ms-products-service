@@ -108,38 +108,7 @@ jobs:
         service: ${{ env.ECS_SERVICE }}
         cluster: ${{ env.ECS_CLUSTER }}
         wait-for-service-stability: true
-  # test1:
-  #   name: Integration Tests
-  #   runs-on: ubuntu-latest
-  #   environment: develop
-  #   needs: deploy
-  #   steps:
-  #     - uses: actions/checkout@master
-  #     - uses: matt-ball/newman-action@master
-  #       with:
-  #         apiKey: ${{ secrets.POSTMAN_API_KEY }}
-  #         collection: ${{ secrets.POSTMAN_COLLECTION_ID }}
-  #         environment: ${{ secrets.POSTMAN_ENVIRONMENT_ID }}
-  # test2:
-  #   name: Integration Tests
-  #   runs-on: ubuntu-latest
-  #   environment: develop
-  #   needs: deploy
-  #   steps:
-  #     - name: Install Node
-  #       uses: actions/setup-node@v3
-  #       with: 
-  #         node-version: "12.x"
-  #     - name: Install Newman
-  #       run: |
-  #         npm install -g newman
-  #         npm install -g newman-reporter-htmlextra
-  #     - name: Make Output File
-  #       run: mkdir -p ${{ env.CONTAINER_NAME }}-report
-  #     - name: Run Postman Collection
-  #       run : |
-  #         newman run "https://api.postman.com/collections/${{ secrets.POSTMAN_COLLECTION_ID }}?access_key=${{ secrets.POSTMAN_ACCESS_KEY }}"
-  test3:
+  test:
     name: Integration Tests
     runs-on: ubuntu-latest
     environment: develop
@@ -157,9 +126,9 @@ jobs:
         run: mkdir -p testResults
       - name: Run POSTMAN collection
         run: |
-          newman run "https://api.postman.com/collections/${{ secrets.POSTMAN_COLLECTION_ID }}?access_key=${{ secrets.POSTMAN_ACCESS_KEY }}" -r htmlextra --reporter-htmlextra-export testResults/htmlreport.html --reporter-htmlextra-darkTheme  > testResults/runreport.html
+          newman run "https://api.postman.com/collections/${{ secrets.POSTMAN_COLLECTION_ID }}?access_key=${{ secrets.POSTMAN_ACCESS_KEY }}" -r htmlextra --reporter-htmlextra-export testResults/${{env.CONTAINER_NAME}}-report.html --reporter-htmlextra-darkTheme
       - name: Output the run Details
         uses: actions/upload-artifact@v2
         with:
-          name: RunReports
+          name: Newman Run Dashboard
           path: testResults
