@@ -17,7 +17,6 @@ env:
   CONTAINER_NAME: ms-products-service                    # set this to the name of the container in the containerDefinitions section of your task definition
   SONAR_PROJECTKEY: 2022S2-G7-PCACERES-MGARCIA-MS_ms-products-service
   ENVIRONMENT_NAME: development
-  POSTMAN_ACCESS_KEY: PMAT-01GM4YMN38DRJDG35Q32QY6RW7
   POSTMAN_COLLECTION_ID: 1304772-3b28a98c-8097-41e0-a7eb-2a76968d2d10
 
 permissions:
@@ -118,16 +117,9 @@ jobs:
     environment: develop
     needs: deploy
     steps:
-      - name: Install Node
-        uses: actions/setup-node@1
-        with: 
-          node-version: "12.x"
-      - name: Install Newman
-        run: |
-          npm install -g newman
-          npm install -g newman-reporter-htmlextra
-      - name: Make Output File
-        run: mkdir -p ${{ env.CONTAINER_NAME }}-report
-      - name: Run Postman Collection
-        run : |
-          newman run "https://api.postman.com/collections/${{ env.POSTMAN_COLLECTION_ID }}?access_key=${{ env.POSTMAN_ACCESS_KEY }}"
+      - uses: actions/checkout@master
+      - uses: matt-ball/newman-action@master
+        with:
+          apiKey: ${{ secrets.POSTMAN_API_KEY }}
+          collection: postman_collection.json
+          environment: ${{ env.POSTMAN_COLLECTION_ID }}
