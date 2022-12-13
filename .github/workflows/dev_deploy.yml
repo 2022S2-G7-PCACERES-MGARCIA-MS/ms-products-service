@@ -115,8 +115,8 @@ jobs:
   test:
     name: Integration Tests
     runs-on: ubuntu-latest
-    environment: deploy
-    needs: build
+    environment: develop
+    needs: deploy
     steps:
       - name: Install Node
         uses: actions/setup-node@1
