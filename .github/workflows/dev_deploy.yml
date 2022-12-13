@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   build:
-    name: Build and Analyze
+    name: Build and Analyze Code
     runs-on: ubuntu-latest
     environment: develop
     steps:
@@ -54,10 +54,11 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=2022S2-G7-PCACERES-MGARCIA-MS_ms-products-service
   deploy:
-    name: Deploy
+    name: Build Image and Deploy
     runs-on: ubuntu-latest
     environment: develop
     needs: build
+    if: github.event_name == 'push'
     steps:    
     - name: Checkout
       uses: actions/checkout@v3
