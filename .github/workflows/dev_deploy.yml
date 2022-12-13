@@ -17,6 +17,8 @@ env:
   CONTAINER_NAME: ms-products-service                    # set this to the name of the container in the containerDefinitions section of your task definition
   SONAR_PROJECTKEY: 2022S2-G7-PCACERES-MGARCIA-MS_ms-products-service
   ENVIRONMENT_NAME: development
+  POSTMAN_ACCESS_KEY: PMAT-01GM4YMN38DRJDG35Q32QY6RW7
+  POSTMAN_COLLECTION_ID: 1304772-3b28a98c-8097-41e0-a7eb-2a76968d2d10
 
 permissions:
   contents: read
@@ -30,26 +32,22 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-
       - name: Set up JDK 11
         uses: actions/setup-java@v1
         with:
           java-version: 11
-
       - name: Cache SonarCloud packages
         uses: actions/cache@v1
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
-
       - name: Cache Maven packages
         uses: actions/cache@v1
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
-
       - name: Build and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
@@ -64,7 +62,6 @@ jobs:
     steps:    
     - name: Checkout
       uses: actions/checkout@v3
-
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
@@ -72,15 +69,12 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
         aws-region: ${{ env.AWS_REGION }}
-        
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
-
     - name: GetDate
       id: date
       run: echo "date=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
-        
     - name: Retag image
       id: retag-img 
       uses: abronin/ecr-retag-action@v1
@@ -90,7 +84,6 @@ jobs:
           repository: ${{ env.ECR_REPOSITORY }}
           tag: ${{ env.IMAGE_TAG }}
           new-tags: ${{ env.IMAGE_TAG }}-${{ env.date }}
-
     - name: Build, tag, and push image to Amazon ECR
       id: build-image
       env:
@@ -102,11 +95,9 @@ jobs:
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --target ${{ env.ENVIRONMENT_NAME }} .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
-        
     - name: Get task definition
       run: |
         aws ecs describe-task-definition --task-definition dev-${{ env.CONTAINER_NAME }}-td --output json --query taskDefinition > task-definition.json
-                
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
       uses: aws-actions/amazon-ecs-render-task-definition@v1
@@ -114,7 +105,6 @@ jobs:
         task-definition: task-definition.json
         container-name: ${{ env.CONTAINER_NAME }}
         image: ${{ steps.build-image.outputs.image }}
-    
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
@@ -122,3 +112,22 @@ jobs:
         service: ${{ env.ECS_SERVICE }}
         cluster: ${{ env.ECS_CLUSTER }}
         wait-for-service-stability: true
+  test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    environment: deploy
+    needs: build
+    steps:
+      - name: Install Node
+        uses: actions/setup-node@1
+        with: 
+          node-version: "12.x"
+      - name: Install Newman
+        run: |
+          npm install -g newman
+          npm install -g newman-reporter-htmlextra
+      - name: Make Output File
+        run: mkdir -p ${{ env.CONTAINER_NAME }}-report
+      - name: Run Postman Collection
+        run : |
+          newman run "https://api.postman.com/collections/${{ env.POSTMAN_COLLECTION_ID }}?access_key=${{ env.POSTMAN_ACCESS_KEY }}"
