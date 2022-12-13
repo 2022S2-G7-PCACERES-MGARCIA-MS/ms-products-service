@@ -17,8 +17,6 @@ env:
   CONTAINER_NAME: ms-products-service                    # set this to the name of the container in the containerDefinitions section of your task definition
   SONAR_PROJECTKEY: 2022S2-G7-PCACERES-MGARCIA-MS_ms-products-service
   ENVIRONMENT_NAME: development
-  POSTMAN_COLLECTION_ID: 1304772-3d5adff1-ec25-4eab-9d3a-dc4dfa4c4763
-  POSTMAN_ENVIRONMENT_ID: 1304772-5b4307bc-a039-49d4-afd9-23150b6237b0
 
 permissions:
   contents: read
@@ -75,21 +73,21 @@ jobs:
     - name: GetDate
       id: date
       run: echo "date=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
-    # - name: Retag image
-    #   id: retag-img 
-    #   uses: abronin/ecr-retag-action@v1
-    #   env:
-    #     IMAGE_TAG: latest
-    #   with:
-    #       repository: ${{ env.ECR_REPOSITORY }}
-    #       tag: ${{ env.IMAGE_TAG }}
-    #       new-tags: ${{ env.IMAGE_TAG }}-${{ env.date }}
+    - name: Retag image
+      id: retag-img 
+      uses: abronin/ecr-retag-action@v1
+      env:
+        IMAGE_TAG: latest
+      with:
+          repository: ${{ env.ECR_REPOSITORY }}
+          tag: ${{ env.IMAGE_TAG }}
+          new-tags: ${{ env.IMAGE_TAG }}-${{ env.date }}
     - name: Build, tag, and push image to Amazon ECR
       id: build-image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
-        #IMAGE_TAG: latest
+        #IMAGE_TAG: ${{ github.sha }}
+        IMAGE_TAG: latest
       run: |
         # Build a docker container and push it to ECR so that it can be deployed to ECS.
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --target ${{ env.ENVIRONMENT_NAME }} .
@@ -122,5 +120,5 @@ jobs:
       - uses: matt-ball/newman-action@master
         with:
           apiKey: ${{ secrets.POSTMAN_API_KEY }}
-          collection: ${{ env.POSTMAN_COLLECTION_ID }}
-          environment: ${{ env.POSTMAN_ENVIRONMENT_ID }}
+          collection: ${{ secrets.POSTMAN_COLLECTION_ID }}
+          environment: ${{ secrets.POSTMAN_ENVIRONMENT_ID }}
