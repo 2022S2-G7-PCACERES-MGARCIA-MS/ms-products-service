@@ -15,6 +15,8 @@ env:
   ECS_SERVICE: dev-products-service                      # set this to your Amazon ECS service name
   ECS_CLUSTER: dev-cluster                               # set this to your Amazon ECS cluster name
   CONTAINER_NAME: ms-products-service                    # set this to the name of the container in the containerDefinitions section of your task definition
+  SONAR_PROJECTKEY: 2022S2-G7-PCACERES-MGARCIA-MS_ms-products-service
+  ENVIRONMENT_NAME: development
 
 permissions:
   contents: read
@@ -52,9 +54,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=2022S2-G7-PCACERES-MGARCIA-MS_ms-products-service
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=${{ env.SONAR_PROJECTKEY }}
   deploy:
-    name: Build Image and Deploy
+    name: Build and Deploy Image
     runs-on: ubuntu-latest
     environment: develop
     needs: build
@@ -94,18 +96,16 @@ jobs:
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         # IMAGE_TAG: ${{ github.sha }}
-        IMAGE_TAG: ${{env.CONTAINER_NAME}}-latest
+        IMAGE_TAG: ${{ env.CONTAINER_NAME }}-latest
       run: |
-        # Build a docker container and
-        # push it to ECR so that it can
-        # be deployed to ECS.
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --target development .
+        # Build a docker container and push it to ECR so that it can be deployed to ECS.
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --target ${{ env.ENVIRONMENT_NAME }} .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
         
     - name: Get task definition
       run: |
-        aws ecs describe-task-definition --task-definition dev-${{ env.CONTAINER_NAME}}-td --output json --query taskDefinition > task-definition.json
+        aws ecs describe-task-definition --task-definition dev-${{ env.CONTAINER_NAME }}-td --output json --query taskDefinition > task-definition.json
                 
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
