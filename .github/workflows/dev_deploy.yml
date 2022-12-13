@@ -17,8 +17,8 @@ env:
   CONTAINER_NAME: ms-products-service                    # set this to the name of the container in the containerDefinitions section of your task definition
   SONAR_PROJECTKEY: 2022S2-G7-PCACERES-MGARCIA-MS_ms-products-service
   ENVIRONMENT_NAME: development
-  POSTMAN_ENVIRONMENT_ID: 10976835-0cf0-4461-b687-217eb48667db
-  POSTMAN_COLLECTION_ID: 1304772-3b28a98c-8097-41e0-a7eb-2a76968d2d10
+  POSTMAN_COLLECTION_ID: 1304772-3d5adff1-ec25-4eab-9d3a-dc4dfa4c4763
+  POSTMAN_ENVIRONMENT_ID: 1304772-5b4307bc-a039-49d4-afd9-23150b6237b0
 
 permissions:
   contents: read
