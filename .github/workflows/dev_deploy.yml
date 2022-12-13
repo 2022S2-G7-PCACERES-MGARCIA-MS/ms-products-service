@@ -17,8 +17,6 @@ env:
   CONTAINER_NAME: ms-products-service                    # set this to the name of the container in the containerDefinitions section of your task definition
   SONAR_PROJECTKEY: 2022S2-G7-PCACERES-MGARCIA-MS_ms-products-service
   ENVIRONMENT_NAME: development
-  POSTMAN_COLLECTION_ID: 1304772-3d5adff1-ec25-4eab-9d3a-dc4dfa4c4763
-  POSTMAN_ENVIRONMENT_ID: 1304772-5b4307bc-a039-49d4-afd9-23150b6237b0
 
 permissions:
   contents: read
@@ -75,21 +73,21 @@ jobs:
     - name: GetDate
       id: date
       run: echo "date=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
-    # - name: Retag image
-    #   id: retag-img 
-    #   uses: abronin/ecr-retag-action@v1
-    #   env:
-    #     IMAGE_TAG: latest
-    #   with:
-    #       repository: ${{ env.ECR_REPOSITORY }}
-    #       tag: ${{ env.IMAGE_TAG }}
-    #       new-tags: ${{ env.IMAGE_TAG }}-${{ env.date }}
+    - name: Retag image
+      id: retag-img 
+      uses: abronin/ecr-retag-action@v1
+      env:
+        IMAGE_TAG: latest
+      with:
+          repository: ${{ env.ECR_REPOSITORY }}
+          tag: ${{ env.IMAGE_TAG }}
+          new-tags: ${{ env.IMAGE_TAG }}-${{ env.date }}
     - name: Build, tag, and push image to Amazon ECR
       id: build-image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
-        #IMAGE_TAG: latest
+        #IMAGE_TAG: ${{ github.sha }}
+        IMAGE_TAG: latest
       run: |
         # Build a docker container and push it to ECR so that it can be deployed to ECS.
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --target ${{ env.ENVIRONMENT_NAME }} .
@@ -112,7 +110,7 @@ jobs:
         service: ${{ env.ECS_SERVICE }}
         cluster: ${{ env.ECS_CLUSTER }}
         wait-for-service-stability: true
-  test:
+  test1:
     name: Integration Tests
     runs-on: ubuntu-latest
     environment: develop
@@ -122,5 +120,55 @@ jobs:
       - uses: matt-ball/newman-action@master
         with:
           apiKey: ${{ secrets.POSTMAN_API_KEY }}
-          collection: ${{ env.POSTMAN_COLLECTION_ID }}
-          environment: ${{ env.POSTMAN_ENVIRONMENT_ID }}
+          collection: ${{ secrets.POSTMAN_COLLECTION_ID }}
+          environment: ${{ secrets.POSTMAN_ENVIRONMENT_ID }}
+  test2:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    environment: develop
+    needs: deploy
+    steps:
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with: 
+          node-version: "12.x"
+      - name: Install Newman
+        run: |
+          npm install -g newman
+          npm install -g newman-reporter-htmlextra
+      - name: Make Output File
+        run: mkdir -p ${{ env.CONTAINER_NAME }}-report
+      - name: Run Postman Collection
+        run : |
+          newman run "https://api.postman.com/collections/${{ secrets.POSTMAN_COLLECTION_ID }}?access_key=${{ secrets.POSTMAN_ACCESS_KEY }}"
+  test3:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    environment: develop
+    needs: deploy
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      # INstall Node on the runner
+      - name: Install Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+      # Install the newman command line utility and also install the html extra reporter
+      - name: Install newman
+        run: |
+          npm install -g newman
+          npm install -g newman-reporter-htmlextra
+      # Make directory to upload the test results
+      - name: Make Directory for results
+        run: mkdir -p testResults
+      # Run the POSTMAN collection
+      - name: Run POSTMAN collection
+        run: |
+          newman run "https://api.postman.com/collections/${{ secrets.POSTMAN_COLLECTION_ID }}?access_key=${{ secrets.POSTMAN_ACCESS_KEY }}" -r htmlextra --reporter-htmlextra-export testResults/htmlreport.html --reporter-htmlextra-darkTheme  > testResults/runreport1.html
+      # Upload the contents of Test Results directory to workspace
+      - name: Output the run Details
+        uses: actions/upload-artifact@v2
+        with:
+          name: RunReports
+          path: testResults
