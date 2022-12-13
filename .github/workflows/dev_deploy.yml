@@ -119,7 +119,7 @@ jobs:
     needs: deploy
     steps:
       - name: Install Node
-        uses: actions/setup-node@1
+        uses: actions/setup-node@v3
         with: 
           node-version: "12.x"
       - name: Install Newman
