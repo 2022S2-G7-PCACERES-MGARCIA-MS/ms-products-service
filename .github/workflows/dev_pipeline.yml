@@ -132,3 +132,18 @@ jobs:
         with:
           name: Newman Run Dashboard
           path: Test_Results
+  propagate:
+    name: Propagate Changes
+    runs-on: ubuntu-latest
+    environment: develop
+    needs: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Create pull request
+        uses: devops-infra/action-pull-request@v0.5.3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          title: Automatic pull request
+          source_branch: develop
+          target_branch: staging
