@@ -126,7 +126,7 @@ jobs:
         run: mkdir -p Test_Results
       - name: Run POSTMAN collection
         run: |
-          newman run "https://api.postman.com/collections/${{ secrets.POSTMAN_COLLECTION_ID }}?access_key=${{ secrets.POSTMAN_ACCESS_KEY }}" -r htmlextra --reporter-htmlextra-export Test_Results/htmlreport.html
+          newman run "https://api.postman.com/collections/${{ secrets.POSTMAN_COLLECTION_ID }}?access_key=${{ secrets.POSTMAN_ACCESS_KEY }}" -r htmlextra --reporter-htmlextra-export Test_Results/htmlreport.html --reporter-htmlextra-darkTheme > Test_Results/runreport.html
       - name: Output the run Details
         uses: actions/upload-artifact@v2
         with:
