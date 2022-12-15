@@ -142,6 +142,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUBWORKFLOW_PERSONAL_ACCESS_TOKEN }}
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4.2.3
         with:
