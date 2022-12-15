@@ -111,7 +111,7 @@ jobs:
   test:
     name: Integration Tests
     runs-on: ubuntu-latest
-    environment: develop
+    environment: staging
     needs: deploy
     steps:
       - name: Install Node
@@ -132,3 +132,17 @@ jobs:
         with:
           name: Newman Run Dashboard
           path: Test_Results
+  propagate:
+    name: Propagate Changes
+    runs-on: ubuntu-latest
+    environment: staging
+    needs: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4.2.3
+        with:
+          token: ${{ secrets.GIT_HUB_WORKFLOW_PERSONAL_ACCESS_TOKEN }}
+          base: staging
+          branch: main
