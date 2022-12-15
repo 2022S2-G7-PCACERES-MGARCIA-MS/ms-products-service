@@ -139,8 +139,8 @@ jobs:
     # needs: test
     needs: build
     steps:
-      # - name: Checkout repository
-      #   uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
       - name: Create pull request
         uses: devops-infra/action-pull-request@v0.5.3
         with:
