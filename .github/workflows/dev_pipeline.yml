@@ -20,7 +20,8 @@ env:
   IMAGE_TAG: latest
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
   build:
@@ -139,11 +140,10 @@ jobs:
     needs: test
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Create pull request
-        uses: devops-infra/action-pull-request@v0.5.3
+        uses: actions/checkout@v3
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4.2.3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          title: Automatic pull request
-          source_branch: develop
-          target_branch: staging
+          token: ${{ secrets.GIT_HUB_WORKFLOW_PERSONAL_ACCESS_TOKEN }}
+          base: develop
+          branch: staging
